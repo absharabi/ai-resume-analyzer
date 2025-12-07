@@ -10,7 +10,8 @@ import {
 import type { Route } from "./+types/root";
 import "./app.css";
 import { usePuterStore } from "lib/puter";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
+import type { ReactNode } from "react";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -25,7 +26,7 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
-export function Layout({ children }: { children: React.ReactNode }) {
+export function Layout({ children }: { children: ReactNode }) {
   const { init } = usePuterStore();
 
   useEffect(() => {
@@ -59,12 +60,26 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
+    // Suppress Chrome DevTools well-known path errors in development
+    if (
+      import.meta.env.DEV &&
+      error.status === 404 &&
+      (error.statusText?.includes(".well-known") ||
+        error.data?.pathname?.includes(".well-known"))
+    ) {
+      return null;
+    }
+
     message = error.status === 404 ? "404" : "Error";
     details =
       error.status === 404
         ? "The requested page could not be found."
         : error.statusText || details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {
+    // Suppress Chrome DevTools well-known path errors in development
+    if (error.message?.includes(".well-known")) {
+      return null;
+    }
     details = error.message;
     stack = error.stack;
   }
