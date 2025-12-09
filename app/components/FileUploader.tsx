@@ -28,7 +28,7 @@ const FileUploader = ({ onFileSelect }: FileUploaderProps) => {
     return (
         <div className="w-full gradient-border">
             <div {...getRootProps()}>
-                <input {...getInputProps()} />
+                <input {...getInputProps({ id: 'uploader' })} />
 
                 <div className="space-y-4 cursor-pointer">
                     {file ? (
