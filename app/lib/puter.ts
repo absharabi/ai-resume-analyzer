@@ -100,6 +100,8 @@ const getPuter = (): typeof window.puter | null =>
   typeof window !== "undefined" && window.puter ? window.puter : null;
 
 export const usePuterStore = create<PuterStore>((set, get) => {
+  const REDIRECT_URL = "https://ai-resume-analyzer-cursor.vercel.app/";
+
   const setError = (msg: string) => {
     set({
       error: msg,
@@ -176,7 +178,12 @@ export const usePuterStore = create<PuterStore>((set, get) => {
 
     try {
       await puter.auth.signIn();
-      await checkAuthStatus();
+
+      const success = await checkAuthStatus();
+
+      if (success) {
+        window.location.href = REDIRECT_URL; // 🔥 redirect after login
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Sign in failed";
       setError(msg);
@@ -194,6 +201,7 @@ export const usePuterStore = create<PuterStore>((set, get) => {
 
     try {
       await puter.auth.signOut();
+
       set({
         auth: {
           user: null,
@@ -206,6 +214,8 @@ export const usePuterStore = create<PuterStore>((set, get) => {
         },
         isLoading: false,
       });
+
+      window.location.href = REDIRECT_URL; // 🔥 redirect after logout
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Sign out failed";
       setError(msg);
@@ -236,7 +246,8 @@ export const usePuterStore = create<PuterStore>((set, get) => {
         isLoading: false,
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to refresh user";
+      const msg =
+        err instanceof Error ? err.message : "Failed to refresh user";
       setError(msg);
     }
   };
@@ -321,7 +332,6 @@ export const usePuterStore = create<PuterStore>((set, get) => {
       setError("Puter.js not available");
       return;
     }
-    // return puter.ai.chat(prompt, imageURL, testMode, options);
     return puter.ai.chat(prompt, imageURL, testMode, options) as Promise<
       AIResponse | undefined
     >;
