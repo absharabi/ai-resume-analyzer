@@ -19,7 +19,7 @@ export default function Home() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // Show curated sample resumes with good scores instead of user history
+        // Show curated sample resumes
         const curated = sampleResumes.filter((r) => r.feedback?.overallScore);
         setResumes(curated);
         setIsLoading(false);
@@ -31,16 +31,8 @@ export default function Home() {
 
     <section className="main-section">
       <div className="page-heading py-2 max-w-3xl mx-auto text-center">
-        <div className="flex flex-col items-center gap-2">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/70 shadow-sm border border-gray-100">
-            <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-              Sample resumes
-            </span>
-            <span className="text-xs text-gray-500">Curated examples (not your uploads)</span>
-          </div>
-          <h1>Track Your Applications & Resume Ratings</h1>
-          <h2>Review curated examples and get AI-powered feedback.</h2>
-        </div>
+        <h1>Track Your Applications & Resume Ratings</h1>
+        <h2>Review your submissions and get AI-powered feedback.</h2>
       </div>
     
     {isLoading || isCheckingAuth ? (
