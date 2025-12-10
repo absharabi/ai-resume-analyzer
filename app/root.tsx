@@ -9,7 +9,7 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
-import { usePuterStore } from "lib/puter";
+import { usePuterStore } from "~/lib/puter";
 import { useEffect } from "react";
 import type { ReactNode } from "react";
 

@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router'
 import ScoreCircle from './ScoreCircle'
-import { usePuterStore } from 'lib/puter'
+import { usePuterStore } from '~/lib/puter'
 
 const ResumeCard = ({resume}: { resume: Resume}) => {
   const { fs } = usePuterStore();

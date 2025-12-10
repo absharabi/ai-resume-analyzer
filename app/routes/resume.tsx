@@ -1,9 +1,11 @@
-import {Link, useNavigate, useParams} from "react-router";
-import {useEffect, useState} from "react";
-import {usePuterStore} from "~/lib/puter";
+import { Link, useNavigate, useParams } from "react-router";
+import { useEffect, useRef, useState } from "react";
+import { usePuterStore } from "~/lib/puter";
 import Summary from "~/components/Summary";
 import ATS from "~/components/ATS";
-import Details from "~/components/Details";     
+import Details from "~/components/Details";
+import { useAuthGuard } from "~/lib/useAuthGuard";
+import { logger, safeParseJSON } from "~/lib/utils";
 
 export const meta = () => ([
     { title: 'Resumind | Review ' },
@@ -11,63 +13,150 @@ export const meta = () => ([
 ]);
 
 const Resume = () => {
-    const { auth, isLoading, fs, kv } = usePuterStore();
+    const { fs, kv } = usePuterStore();
+    const { isCheckingAuth } = useAuthGuard();
     const { id } = useParams();
     const [imageUrl, setImageUrl] = useState('');
     const [resumeUrl, setResumeUrl] = useState('');
     const [feedback, setFeedback] = useState<Feedback | null>(null);
+    const [status, setStatus] = useState<ResumeStatus>('processing');
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const navigate = useNavigate();
-
-    useEffect(() => {
-        if(!isLoading && !auth.isAuthenticated) navigate(`/auth?next=/resume/${id}`);
-    }, [isLoading])
+    const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const attemptsRef = useRef(0);
+    const delayRef = useRef(2000);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
-        let poll: ReturnType<typeof setInterval> | null = null;
+
+        const clearPoll = () => {
+            if (pollRef.current) {
+                clearTimeout(pollRef.current);
+                pollRef.current = null;
+            }
+        };
+
+        const schedulePoll = () => {
+            const delay = delayRef.current;
+            clearPoll();
+            pollRef.current = setTimeout(loadResume, delay);
+        };
 
         const loadResume = async () => {
-            const resume = await kv.get(`resume:${id}`);
-            if(!resume) return;
+            if (!kv || !fs || !id) return;
 
-            const data = JSON.parse(resume);
+            const resumeValue = await kv.get(`resume:${id}`);
+            if (!resumeValue) {
+                attemptsRef.current += 1;
+                if (attemptsRef.current > 15) {
+                    setErrorMessage("We couldn't find this resume. Please try uploading again.");
+                    clearPoll();
+                    return;
+                }
+                schedulePoll();
+                return;
+            }
+
+            const { data, error } = safeParseJSON<Resume>(resumeValue);
+            if (error || !data) {
+                setErrorMessage("Saved resume data is corrupted. Please re-upload.");
+                setStatus("error");
+                clearPoll();
+                return;
+            }
+
+            setStatus(data.status ?? "processing");
+            setErrorMessage(data.errorMessage ?? null);
 
             try {
-                const resumeBlob = await fs.read(data.resumePath);
-                if(resumeBlob) {
-                    const pdfBlob = new Blob([resumeBlob], { type: 'application/pdf' });
-                    const resumeUrl = URL.createObjectURL(pdfBlob);
-                    if (isMounted) setResumeUrl(resumeUrl);
+                if (data.resumePath) {
+                    const resumeBlob = await fs.read(data.resumePath);
+                    if (resumeBlob) {
+                        const pdfBlob = new Blob([resumeBlob], { type: "application/pdf" });
+                        const url = URL.createObjectURL(pdfBlob);
+                        if (isMounted) setResumeUrl(url);
+                    }
                 }
             } catch (error) {
-                console.error('Error reading resume file:', error);
+                logger.error("Error reading resume file:", error);
             }
 
             try {
-                const imageBlob = await fs.read(data.imagePath);
-                if(imageBlob) {
-                    const imageUrl = URL.createObjectURL(imageBlob);
-                    if (isMounted) setImageUrl(imageUrl);
+                if (data.imagePath) {
+                    const imageBlob = await fs.read(data.imagePath);
+                    if (imageBlob) {
+                        const url = URL.createObjectURL(imageBlob);
+                        if (isMounted) setImageUrl(url);
+                    }
                 }
             } catch (error) {
-                console.error('Error reading image file:', error);
+                logger.error("Error reading image file:", error);
             }
 
-            if(data.feedback && typeof data.feedback === 'object' && data.feedback.overallScore !== undefined) {
-                if (isMounted) setFeedback(data.feedback);
-                if (poll) clearInterval(poll);
+            const hasFeedback =
+                data.feedback &&
+                typeof data.feedback === "object" &&
+                data.feedback.overallScore !== undefined;
+
+            if (data.status === "error") {
+                clearPoll();
+                return;
             }
-            console.log({resumeUrl, imageUrl, feedback: data.feedback });
-        }
+
+            if (hasFeedback) {
+                if (isMounted) {
+                    setStatus(data.status ?? "success");
+                    setFeedback(data.feedback);
+                }
+                clearPoll();
+                return;
+            }
+
+            // Still processing - backoff polling
+            attemptsRef.current += 1;
+            delayRef.current = Math.min(delayRef.current * 1.5, 10000);
+            if (attemptsRef.current > 25) {
+                setStatus("error");
+                setErrorMessage("Analysis is taking longer than expected. Please try again later.");
+                clearPoll();
+                return;
+            }
+            schedulePoll();
+        };
 
         loadResume();
-        poll = setInterval(loadResume, 2000);
 
         return () => {
             isMounted = false;
-            if (poll) clearInterval(poll);
+            clearPoll();
         };
-    }, [id]);
+    }, [fs, id, kv]);
+
+    const manualRefresh = async () => {
+        setIsRefreshing(true);
+        try {
+            const resumeValue = await kv?.get(`resume:${id}`);
+            if (!resumeValue) return;
+            const { data, error } = safeParseJSON<Resume>(resumeValue);
+            if (error || !data) return;
+            setStatus(data.status ?? "processing");
+            setErrorMessage(data.errorMessage ?? null);
+            if (data.feedback && typeof data.feedback === "object") {
+                setFeedback(data.feedback);
+            }
+        } finally {
+            setIsRefreshing(false);
+        }
+    };
+
+    if (isCheckingAuth) {
+        return (
+            <main className="p-8">
+                <p className="text-gray-600">Checking your session…</p>
+            </main>
+        );
+    }
 
     return (
         <main className="!pt-0">
@@ -78,8 +167,8 @@ const Resume = () => {
                 </Link>
             </nav>
             <div className="flex flex-row w-full max-lg:flex-col-reverse">
-                <section className="feedback-section bg-[url('/images/bg-small.svg') bg-cover h-[100vh] sticky top-0 items-center justify-center">
-                    {imageUrl && resumeUrl && (
+                <section className="feedback-section bg-[url('/images/bg-small.svg')] bg-cover h-[100vh] sticky top-0 items-center justify-center">
+                    {imageUrl && resumeUrl ? (
                         <div className="animate-in fade-in duration-1000 gradient-border max-sm:m-0 h-[90%] max-wxl:h-fit w-fit">
                             <a href={resumeUrl} target="_blank" rel="noopener noreferrer">
                                 <img
@@ -89,36 +178,68 @@ const Resume = () => {
                                 />
                             </a>
                         </div>
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-500">
+                            Loading preview...
+                        </div>
                     )}
                 </section>
                 <section className="feedback-section">
                     <h2 className="text-4xl !text-black font-bold">Resume Review</h2>
-                    {feedback ? (
-                        <div className="flex flex-col gap-8 animate-in fade-in duration-1000">
-                            <Summary feedback={feedback} />
-                            <div>
-                                <h3 className="font-bold mb-2">ATS Score</h3>
-                                <div>
-                                    Score: {feedback.ATS?.score || 0}
-                                    <ul className="list-disc ml-5 mt-1">
-                                        {(feedback.ATS?.tips || []).map((tip: { type: "good" | "improve"; tip: string; }, idx: number) => (
-                                            <li key={idx}>
-                                                <span className={tip.type === "good" ? "text-green-600" : "text-yellow-700"}>
-                                                    {tip.tip}
-                                                </span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
+                    {status === "processing" && (
+                        <div className="flex flex-col gap-3">
+                            <p className="text-gray-700 text-sm">
+                                Your resume is being analyzed. This can take a few moments.
+                            </p>
+                            <div className="w-full flex justify-center">
+                                <img
+                                    src="/images/resume-scan-2.gif"
+                                    className="max-w-sm w-full rounded-xl shadow-sm"
+                                />
                             </div>
-                            <div>
-                                <h3 className="font-bold mb-2">Details</h3>
-                                <pre>{JSON.stringify(feedback, null, 2)}</pre>
+                            <div className="flex gap-3">
+                                <button
+                                    className="secondary-button !px-4 !py-2"
+                                    onClick={manualRefresh}
+                                    disabled={isRefreshing}
+                                >
+                                    {isRefreshing ? "Refreshing..." : "Refresh status"}
+                                </button>
+                                <button
+                                    className="secondary-button !px-4 !py-2"
+                                    onClick={() => navigate(0)}
+                                >
+                                    Full reload
+                                </button>
                             </div>
                         </div>
-                    ) : (
-                        <img src="/images/resume-scan-2.gif" className="w-full" />
                     )}
+                    {status === "error" && (
+                        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4">
+                            <p className="font-semibold">Analysis failed</p>
+                            <p className="mt-1 text-sm">
+                                {errorMessage || "Something went wrong while analyzing your resume."}
+                            </p>
+                            <div className="mt-3 flex gap-3">
+                                <Link to="/upload" className="primary-button !px-4 !py-2">
+                                    Re-run analysis
+                                </Link>
+                                <button
+                                    className="secondary-button !px-4 !py-2"
+                                    onClick={() => navigate(0)}
+                                >
+                                    Retry
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                    {feedback && status === "success" ? (
+                        <div className="flex flex-col gap-8 animate-in fade-in duration-1000">
+                            <Summary feedback={feedback} />
+                            <ATS feedback={feedback} />
+                            <Details feedback={feedback} />
+                        </div>
+                    ) : null}
                 </section>
             </div>
         </main>

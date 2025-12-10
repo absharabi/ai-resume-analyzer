@@ -5,13 +5,19 @@ interface Job {
   requiredSkills: string[];
 }
 
+type ResumeStatus = "processing" | "success" | "error";
+
 interface Resume {
   id: string;
   companyName?: string;
   jobTitle?: string;
   imagePath: string;
   resumePath: string;
-  feedback: Feedback;
+  status?: ResumeStatus;
+  errorMessage?: string | null;
+  createdAt?: number;
+  updatedAt?: number;
+  feedback?: Feedback | null;
 }
 
 interface Feedback {
