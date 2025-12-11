@@ -167,46 +167,46 @@ const Resume = () => {
                 </Link>
             </nav>
             <div className="flex flex-row w-full max-lg:flex-col-reverse">
-                <section className="feedback-section bg-[url('/images/bg-small.svg')] bg-cover h-[100vh] sticky top-0 items-center justify-center">
+                <section className="feedback-section bg-[url('/images/bg-small.svg')] bg-cover lg:h-[100vh] lg:sticky lg:top-0 items-center justify-center max-lg:min-h-[400px] max-lg:max-h-[500px] max-sm:min-h-[300px] max-sm:max-h-[400px]">
                     {imageUrl && resumeUrl ? (
-                        <div className="animate-in fade-in duration-1000 gradient-border max-sm:m-0 h-[90%] max-wxl:h-fit w-fit">
+                        <div className="animate-in fade-in duration-1000 gradient-border max-sm:m-0 max-sm:mx-2 lg:h-[90%] max-lg:h-full max-wxl:h-fit w-fit max-lg:w-full">
                             <a href={resumeUrl} target="_blank" rel="noopener noreferrer">
                                 <img
                                     src={imageUrl}
-                                    className="w-full h-full object-contain rounded-2xl"
+                                    className="w-full h-full object-contain rounded-2xl max-sm:rounded-lg"
                                     title="resume"
                                 />
                             </a>
                         </div>
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-500">
+                        <div className="w-full h-full flex items-center justify-center text-gray-500 max-sm:text-sm">
                             Loading preview...
                         </div>
                     )}
                 </section>
                 <section className="feedback-section">
-                    <h2 className="text-4xl !text-black font-bold">Resume Review</h2>
+                    <h2 className="text-4xl max-sm:text-2xl !text-black font-bold">Resume Review</h2>
                     {status === "processing" && (
-                        <div className="flex flex-col gap-3">
-                            <p className="text-gray-700 text-sm">
+                        <div className="flex flex-col gap-3 max-sm:gap-2">
+                            <p className="text-gray-700 text-sm max-sm:text-xs">
                                 Your resume is being analyzed. This can take a few moments.
                             </p>
                             <div className="w-full flex justify-center">
                                 <img
                                     src="/images/resume-scan-2.gif"
-                                    className="max-w-sm w-full rounded-xl shadow-sm"
+                                    className="max-w-sm w-full rounded-xl max-sm:rounded-lg shadow-sm"
                                 />
                             </div>
-                            <div className="flex gap-3">
+                            <div className="flex gap-3 max-sm:flex-col max-sm:gap-2">
                                 <button
-                                    className="secondary-button !px-4 !py-2"
+                                    className="secondary-button !px-4 !py-2 max-sm:!px-3 max-sm:!py-1.5 max-sm:text-sm"
                                     onClick={manualRefresh}
                                     disabled={isRefreshing}
                                 >
                                     {isRefreshing ? "Refreshing..." : "Refresh status"}
                                 </button>
                                 <button
-                                    className="secondary-button !px-4 !py-2"
+                                    className="secondary-button !px-4 !py-2 max-sm:!px-3 max-sm:!py-1.5 max-sm:text-sm"
                                     onClick={() => navigate(0)}
                                 >
                                     Full reload
@@ -215,17 +215,17 @@ const Resume = () => {
                         </div>
                     )}
                     {status === "error" && (
-                        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4">
-                            <p className="font-semibold">Analysis failed</p>
-                            <p className="mt-1 text-sm">
+                        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl max-sm:rounded-lg p-4 max-sm:p-3">
+                            <p className="font-semibold max-sm:text-sm">Analysis failed</p>
+                            <p className="mt-1 text-sm max-sm:text-xs">
                                 {errorMessage || "Something went wrong while analyzing your resume."}
                             </p>
-                            <div className="mt-3 flex gap-3">
-                                <Link to="/upload" className="primary-button !px-4 !py-2">
+                            <div className="mt-3 max-sm:mt-2 flex gap-3 max-sm:flex-col max-sm:gap-2">
+                                <Link to="/upload" className="primary-button !px-4 !py-2 max-sm:!px-3 max-sm:!py-1.5 max-sm:text-sm">
                                     Re-run analysis
                                 </Link>
                                 <button
-                                    className="secondary-button !px-4 !py-2"
+                                    className="secondary-button !px-4 !py-2 max-sm:!px-3 max-sm:!py-1.5 max-sm:text-sm"
                                     onClick={() => navigate(0)}
                                 >
                                     Retry
@@ -234,7 +234,7 @@ const Resume = () => {
                         </div>
                     )}
                     {feedback && status === "success" ? (
-                        <div className="flex flex-col gap-8 animate-in fade-in duration-1000">
+                        <div className="flex flex-col gap-8 max-sm:gap-6 animate-in fade-in duration-1000">
                             <Summary feedback={feedback} />
                             <ATS feedback={feedback} />
                             <Details feedback={feedback} />

@@ -18,8 +18,8 @@ export default function ScoreBadge({ score }: ScoreBadgeProps) {
   }
 
   return (
-    <div className={`px-3 py-1 rounded-full ${badgeColor}`}>
-      <p className="text-sm font-medium">{badgeText}</p>
+    <div className={`px-3 py-1 max-sm:px-2 max-sm:py-0.5 rounded-full ${badgeColor}`}>
+      <p className="text-sm max-sm:text-xs font-medium">{badgeText}</p>
     </div>
   );
 }
