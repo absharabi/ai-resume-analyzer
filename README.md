@@ -142,9 +142,8 @@ If you prefer containerized testing:
 
 ---
 
-## 💼 Why Recruiters Will Love This Codebase
 
-When evaluating this project, recruiters and hiring managers will appreciate:
+Features : 
 * **Serverless Backend-less Architecture**: Avoids the complexity and cost of maintaining dedicated API servers. Auth, cloud database (KV), storage (FS), and AI LLM APIs are all completely orchestrated on the client via **Puter.js SDK** secure tokens.
 * **Complex UI States & Polish**: Fine-grained transitions when loading, processing, and navigating. Modern accordion interfaces, interactive SVGs gauges, and theme toggling demonstrate strong CSS and React design chops.
 * **TypeScript Rigor**: Strict interface compliance for raw data structures (such as `Feedback` schemas and client states).
