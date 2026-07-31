@@ -1,6 +1,6 @@
 import { usePuterStore } from '~/lib/puter'
 import { useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 export const meta = () => ([
     { title: 'Resumind | Auth' },
     { name: 'Authentication page for Resumind', content: 'Log into your account'}
@@ -8,13 +8,19 @@ export const meta = () => ([
 
 const Auth = () => {
     const { isLoading, auth } = usePuterStore();
-    const location = useLocation();
-    const next = location.search.split('next=')[1];
+    const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    
+
+    // searchParams.get() decodes for us; only allow same-site paths so a crafted
+    // ?next=https://evil.com cannot turn the login screen into an open redirect.
+    const requestedNext = searchParams.get('next');
+    const next = requestedNext?.startsWith('/') && !requestedNext.startsWith('//')
+        ? requestedNext
+        : '/';
+
     useEffect(() => {
-        if (auth.isAuthenticated) navigate(next || '/');
-    }, [auth.isAuthenticated, next]);
+        if (auth.isAuthenticated) navigate(next, { replace: true });
+    }, [auth.isAuthenticated, next, navigate]);
 
 
 

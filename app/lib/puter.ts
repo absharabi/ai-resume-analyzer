@@ -100,7 +100,6 @@ const getPuter = (): typeof window.puter | null =>
   typeof window !== "undefined" && window.puter ? window.puter : null;
 
 export const usePuterStore = create<PuterStore>((set, get) => {
-  const REDIRECT_URL = "https://ai-resume-analyzer-cursor.vercel.app/";
 
   const setError = (msg: string) => {
     set({
@@ -179,11 +178,9 @@ export const usePuterStore = create<PuterStore>((set, get) => {
     try {
       await puter.auth.signIn();
 
-      const success = await checkAuthStatus();
-
-      if (success) {
-        window.location.href = REDIRECT_URL; // 🔥 redirect after login
-      }
+      // No navigation here on purpose: once isAuthenticated flips, the /auth
+      // route redirects to the `next` param, so users land back where they were.
+      await checkAuthStatus();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Sign in failed";
       setError(msg);
@@ -215,7 +212,8 @@ export const usePuterStore = create<PuterStore>((set, get) => {
         isLoading: false,
       });
 
-      window.location.href = REDIRECT_URL; // 🔥 redirect after logout
+      // Origin-relative so this works on localhost and any deployment.
+      window.location.href = `${window.location.origin}/`;
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Sign out failed";
       setError(msg);
