@@ -5,6 +5,11 @@
     "**/.client/**/*",
     ".react-router/types/**/*"
   ],
+  "exclude": [
+    "node_modules",
+    "build",
+    "ai-resume-analyzer"
+  ],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "types": ["node", "vite/client"],

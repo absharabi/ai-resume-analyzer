@@ -8,9 +8,8 @@ const ResumeCard = ({resume}: { resume: Resume}) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const blobUrlRef = useRef<string | null>(null);
 
-  // Check if feedback is valid (not empty string or undefined)
-  const hasValidFeedback = resume.feedback && typeof resume.feedback === 'object' && resume.feedback.overallScore !== undefined;
-  const overallScore = hasValidFeedback ? resume.feedback.overallScore : 0;
+  // Falls back to 0 when feedback is missing, null, or still being generated
+  const overallScore = resume.feedback?.overallScore ?? 0;
 
   useEffect(() => {
     // Check if imagePath is a Puter file path (starts with /) or a regular URL

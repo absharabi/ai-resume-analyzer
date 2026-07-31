@@ -4,3 +4,7 @@
 # React Router
 /.react-router/
 /build/
+
+# Stale duplicate clone of this project nested inside itself.
+# Safe to delete; ignored so it is never committed or typechecked.
+/ai-resume-analyzer/

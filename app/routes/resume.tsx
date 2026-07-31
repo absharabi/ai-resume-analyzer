@@ -107,7 +107,7 @@ const Resume = () => {
             if (hasFeedback) {
                 if (isMounted) {
                     setStatus(data.status ?? "success");
-                    setFeedback(data.feedback);
+                    setFeedback(data.feedback ?? null);
                 }
                 clearPoll();
                 return;
