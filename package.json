@@ -2,7 +2,7 @@
   "name": "ai-resume-analyzer",
   "version": "1.0.0",
   "private": true,
-  "description": "A modern, production-ready template for building full-stack React applications using React Router.",
+  "description": "AI resume analyzer that scores a CV against a target job description and returns ATS, tone, content, structure and skills feedback.",
   "homepage": "https://github.com/absharabi/ai-resume-analyzer#readme",
   "bugs": {
     "url": "https://github.com/absharabi/ai-resume-analyzer/issues"
@@ -14,10 +14,6 @@
   "license": "ISC",
   "author": "",
   "type": "module",
-  "main": "index.js",
-  "directories": {
-    "lib": "lib"
-  },
   "scripts": {
     "build": "react-router build",
     "dev": "react-router dev",
